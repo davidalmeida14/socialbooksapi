@@ -17,53 +17,47 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.algaworks.socialbooks.domain.Livro;
 import com.algaworks.socialbooks.repository.LivrosRepository;
+import com.algaworks.socialbooks.services.LivrosService;
+import com.algaworks.socialbooks.services.exceptions.LivroNaoEncontradoException;
 
 @RestController
 @RequestMapping("/livros")
 public class LivrosResources {
 	
 	@Autowired
-	private LivrosRepository livrosRepository;
+	private LivrosService livrosService;
 	
 	public static int totalComponentes = 0;
 	
 	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<List<Livro>> listar() {
-		return ResponseEntity.ok().body(livrosRepository.findAll());
+		return ResponseEntity.ok().body(livrosService.listarLivros());
 	}
 	
 	@RequestMapping(value = "/{id}" ,method = RequestMethod.GET)
 	public ResponseEntity<?> buscarLivro(@PathVariable long id) {
-		Livro livro = livrosRepository.findById(id).orElse(null);
-		if(livro == null) {
-			return ResponseEntity.notFound().build();
-		}
+		Livro livro = livrosService.buscarLivro(id);
 		return ResponseEntity.status(HttpStatus.OK).body(livro);
 	}
 	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseStatus(value = HttpStatus.CREATED)
 	public ResponseEntity<Void> salvar(@RequestBody Livro livro) {
-		Livro livroSalvo = livrosRepository.save(livro);
+		Livro livroSalvo = livrosService.salvar(livro);
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(livroSalvo.getId()).toUri();
 		return ResponseEntity.created(uri).build();
 	}
 
 	@RequestMapping(value = "/{id}", method= RequestMethod.DELETE)
 	public ResponseEntity<Void> deletar(@PathVariable("id") long id) {
-		try {
-			livrosRepository.deleteById(id);
-		} catch(EmptyResultDataAccessException e) {
-			return ResponseEntity.notFound().build();
-		}
+		livrosService.deletar(id);
 		return ResponseEntity.noContent().build();
 	}
 	
 	@RequestMapping(value = "/{id}", method= RequestMethod.PUT)
 	public ResponseEntity<Void> atualizar(@PathVariable Long id, @RequestBody Livro livro) {
 		livro.setId(id);
-		livrosRepository.save(livro);
-		
+		livrosService.atualizar(livro);
 		return ResponseEntity.noContent().build();
 	}
 	
