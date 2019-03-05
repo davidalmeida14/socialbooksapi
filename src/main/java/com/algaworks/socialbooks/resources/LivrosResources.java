@@ -1,81 +1,71 @@
 package com.algaworks.socialbooks.resources;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.net.URI;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.algaworks.socialbooks.domain.Livro;
-import com.algaworks.socialbooks.tasks.Task;
+import com.algaworks.socialbooks.repository.LivrosRepository;
 
 @RestController
+@RequestMapping("/livros")
 public class LivrosResources {
+	
+	@Autowired
+	private LivrosRepository livrosRepository;
+	
 	public static int totalComponentes = 0;
-	@RequestMapping(value = "/livros", method = RequestMethod.GET)
-	public List<Livro> listar() {
-		Livro l1 = new Livro("Rest Aplicado");
-		Livro l2 = new Livro("Git passo a passo");
-		Livro[] livros = {l1, l2};
-		return Arrays.asList(livros);
+	
+	@RequestMapping(method = RequestMethod.GET)
+	public ResponseEntity<List<Livro>> listar() {
+		return ResponseEntity.ok().body(livrosRepository.findAll());
 	}
 	
-	
-	private void inicio() {
-		int quantidadeThreads = 4;
-		int i = 100;
-		List<Integer> inteiros = new ArrayList<Integer>();
-		while(i > 0) {
-			inteiros.add(i);
-			i--;
+	@RequestMapping(value = "/{id}" ,method = RequestMethod.GET)
+	public ResponseEntity<?> buscarLivro(@PathVariable long id) {
+		Livro livro = livrosRepository.findById(id).orElse(null);
+		if(livro == null) {
+			return ResponseEntity.notFound().build();
 		}
-		System.out.println("Tamanho da lista: " + inteiros.size());
-		
-		List<List<Integer>> listaTotal = criarListas(inteiros);
+		return ResponseEntity.status(HttpStatus.OK).body(livro);
+	}
 	
-		List<Task> listaTask = criarTasks(listaTotal);
-		
-		for(int it=0; it<quantidadeThreads; it++) {
-			Thread[] t = new Thread[quantidadeThreads];
-			t[i] = new Thread(listaTask.get(i));
-			t[i].run();
-		}
+	@RequestMapping(method = RequestMethod.POST)
+	@ResponseStatus(value = HttpStatus.CREATED)
+	public ResponseEntity<Void> salvar(@RequestBody Livro livro) {
+		Livro livroSalvo = livrosRepository.save(livro);
+		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(livroSalvo.getId()).toUri();
+		return ResponseEntity.created(uri).build();
 	}
-	private List<Task> criarTasks(List<List<Integer>> listaTotal) {
-		List<Task> listaTask = new ArrayList<Task>();
-		listaTotal.forEach(e-> {
-			e.forEach(total->{
-				Task t = new Task(e);
-				listaTask.add(t);
-			});
-		});
-		return listaTask;
-	}
-	private List<List<Integer>> criarListas(List<Integer> inteiros) {
-		List<List<Integer>> total = new ArrayList<List<Integer>>();
 
-		List<Integer> lista1 = inteiros.subList(0, 25);
-		List<Integer> lista2 = inteiros.subList(25, 50);
-		List<Integer> lista3 = inteiros.subList(50, 75);
-		List<Integer> lista4 = inteiros.subList(75, 100);
-		
-		total.add(lista1);
-		total.add(lista2);
-		total.add(lista3);
-		total.add(lista4);
-		
-		total.forEach(f-> {
-			totalComponentes = totalComponentes + f.size();
-		});
-		
-		System.out.println(lista1.size());
-		System.out.println(lista2.size());
-		System.out.println(lista3.size());
-		System.out.println(lista4.size());
-		System.out.println("Total componentes: " + totalComponentes);
-		return total;
+	@RequestMapping(value = "/{id}", method= RequestMethod.DELETE)
+	public ResponseEntity<Void> deletar(@PathVariable("id") long id) {
+		try {
+			livrosRepository.deleteById(id);
+		} catch(EmptyResultDataAccessException e) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.noContent().build();
 	}
+	
+	@RequestMapping(value = "/{id}", method= RequestMethod.PUT)
+	public ResponseEntity<Void> atualizar(@PathVariable Long id, @RequestBody Livro livro) {
+		livro.setId(id);
+		livrosRepository.save(livro);
+		
+		return ResponseEntity.noContent().build();
+	}
+	
 	
 }
