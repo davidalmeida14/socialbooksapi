@@ -53,6 +53,21 @@
 			    <artifactId>guava</artifactId>
 			    <version>27.0.1-jre</version>
 			</dependency>
+			
+			<dependency>
+			    <groupId>com.github.thiagonego</groupId>
+			    <artifactId>alfred</artifactId>
+			    <version>1.4.0</version>
+			</dependency>
+			
+			<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+			<dependency>
+			    <groupId>org.projectlombok</groupId>
+			    <artifactId>lombok</artifactId>
+			    <scope>provided</scope>
+			</dependency>
+			
+			
 	</dependencies>
 
 	<build>
